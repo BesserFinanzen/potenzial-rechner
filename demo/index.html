@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo – Potenzial-Rechner</title>
+  <!-- Nur Demo: auf besserfinanzen.de sind Geist und Instrument Serif bereits ueber Webflow geladen. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: Geist, system-ui, sans-serif; background: hsl(241.5 80.2% 19.8%); color: #fff; }
+    /* Nachbildung des Hero: .r7 = Flex-Zeile, links Text, rechts die Karte (Platz von .r19). */
+    .r3 { max-width: 1200px; margin: 0 auto; padding: 28px 40px 90px; box-sizing: border-box; }
+    .r7 { display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start; }
+    .left { flex: 1 1 400px; min-width: 0; }
+    .left h1 { font-size: clamp(36px, 5vw, 60px); font-weight: 500; letter-spacing: -.03em; line-height: 110%; margin: 0 0 16px; }
+    .left p { font-size: 18px; opacity: .8; margin: 0; }
+    #calendly-rechner-embed { max-width: 1200px; height: 200px; margin: 48px auto 0; border: 2px dashed #adb0ff; border-radius: 20px;
+      display: flex; align-items: center; justify-content: center; text-align: center; color: #adb0ff; }
+    @media (max-width: 479px) { .r3 { padding: 28px 20px 60px; } .r7 { gap: 32px; } }
+  </style>
+</head>
+<body>
+  <div class="r3">
+    <div class="r7">
+      <div class="left"><h1>Wie viel Förderung und Steuervorteil liegen bei dir ungenutzt?</h1><p>Vier Angaben, 60 Sekunden. Danach weißt du, was bei dir möglich ist.</p></div>
+      <div data-bf-rechner data-calendar="calendly-rechner-embed"></div>
+    </div>
+    <div id="calendly-rechner-embed">Platzhalter für Calendly-Embed</div>
+  </div>
+  <script>
+    window.startCalendlyIn = function (id) { document.getElementById(id).textContent = 'Calendly gestartet (' + id + ')'; };
+    addEventListener('bf:rechner:track', function (e) { (window.__events = window.__events || []).push(e.detail); });
+  </script>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
