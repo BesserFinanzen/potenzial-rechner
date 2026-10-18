@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { Inputs, Result, calculate, eur, validate } from '../calc/engine';
 import { defaultConfig, disclaimerText } from '../calc/config';
 import { Tracker } from '../tracking/client';
@@ -86,6 +86,8 @@ export function App({ tracker, calendarId }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const [blurred, setBlurred] = useState<Record<string, boolean>>({});
   const started = useRef(false);
+  const card = useRef<HTMLDivElement>(null);
+  const fromH = useRef(0);
 
   const inputs: Partial<Inputs> = { age: toNum(vals.age), netIncome: toNum(vals.netIncome), monthlySavings: toNum(vals.monthlySavings) };
   const errs = validate(inputs);
@@ -102,7 +104,25 @@ export function App({ tracker, calendarId }: Props) {
     if (vals[key]) tracker.track('rechner_step', { field: key, value: toNum(vals[key]) });
   };
 
+  // Beim Wechsel Eingabe <-> Ergebnis waechst bzw. schrumpft die Karte weich auf die neue Hoehe.
+  useLayoutEffect(() => {
+    const el = card.current, from = fromH.current;
+    fromH.current = 0;
+    if (!el || !from || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const to = el.offsetHeight;
+    if (Math.abs(to - from) < 2) return;
+    el.style.flex = 'none';
+    el.style.height = from + 'px';
+    el.getBoundingClientRect();
+    el.style.transition = 'height .35s ease';
+    el.style.height = to + 'px';
+    const done = () => { el.style.flex = el.style.height = el.style.transition = ''; el.removeEventListener('transitionend', done); };
+    el.addEventListener('transitionend', done);
+  }, [result]);
+  const grab = () => { fromH.current = card.current?.offsetHeight ?? 0; };
+
   function show() {
+    grab();
     setSubmitted(true);
     if (errs.length) return;
     const r = calculate(inputs as Inputs);
@@ -112,6 +132,7 @@ export function App({ tracker, calendarId }: Props) {
   }
   // Zurueck zur Eingabe, die Werte bleiben zum Anpassen stehen.
   const reset = () => {
+    grab();
     tracker.track('rechner_reset');
     setResult(null);
     setSubmitted(false);
@@ -121,7 +142,7 @@ export function App({ tracker, calendarId }: Props) {
 
   return (
     <div class="wrap">
-      <div class="card">
+      <div class="card" ref={card}>
         {result ? (
           <ResultView r={result} onReset={reset} />
         ) : (
