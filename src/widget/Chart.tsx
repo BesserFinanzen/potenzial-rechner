@@ -1,10 +1,23 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { SeriesPoint, eur } from '../calc/engine';
 
-const W = 640, H = 300, PAD = { l: 8, r: 8, t: 12, b: 26 };
+const PAD = { l: 8, r: 8, t: 12, b: 26 };
 
 export function Chart({ series }: { series: SeriesPoint[] }) {
   const [hover, setHover] = useState<number | null>(null);
+  // Das Diagramm fuellt den verfuegbaren Platz: viewBox = gemessene Pixelgroesse (keine Verzerrung).
+  const box = useRef<HTMLDivElement>(null);
+  const [{ W, H }, setSize] = useState({ W: 640, H: 300 });
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => {
+      const w = Math.round(e.contentRect.width), h = Math.round(e.contentRect.height);
+      if (w > 0 && h > 0) setSize((s) => (s.W === w && s.H === h ? s : { W: w, H: h }));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const max = Math.max(...series.map((s) => s.optimized), 1);
   const n = series.length - 1 || 1;
   const x = (i: number) => PAD.l + (i / n) * (W - PAD.l - PAD.r);
@@ -18,7 +31,8 @@ export function Chart({ series }: { series: SeriesPoint[] }) {
   };
   const h = hover != null ? series[hover] : null;
   return (
-    <div>
+    <div class="chartwrap">
+      <div class="chartbox" ref={box}>
       <svg class="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Vermögensverlauf bis zur Rente, heute versus optimiert"
         onPointerMove={move} onPointerLeave={() => setHover(null)}>
         <defs>
@@ -38,6 +52,7 @@ export function Chart({ series }: { series: SeriesPoint[] }) {
           </g>
         )}
       </svg>
+      </div>
       <div class="legend" aria-live="polite">
         {h ? <span>Mit {h.age} Jahren: heute {eur(h.current)} · optimiert {eur(h.optimized)}</span> : (
           <>

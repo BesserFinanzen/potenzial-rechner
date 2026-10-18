@@ -1,15 +1,19 @@
 /* Host = Platz der Webflow-Karte .r19: flex 1 1 400px, max. 520 px breit. */
-:host { all: initial; display: block; flex: 1 1 400px; width: 100%; max-width: 520px; min-width: 0;
+:host { all: initial; display: flex; flex-direction: column; align-self: stretch; flex: 1 1 400px; width: 100%; max-width: 520px; min-width: 0;
   --header: #0d0a3a; --paragraph: hsl(241.6 78.7% 9.2% / .7); --muted: hsl(241.6 78.7% 9.2% / .6);
   --purple: hsl(241.7 93.5% 69.8%); --light-purple: hsl(241.5 100% 84.1%); --neutral-bg: hsl(235.4 100% 97.5%);
   --border: hsl(241.6 78.7% 9.2% / .14); --red: hsl(351.4 86.8% 52.6%);
   font-family: Geist, "Geist Local", system-ui, -apple-system, sans-serif; color: var(--header); }
 *, *::before, *::after { box-sizing: border-box; }
-.wrap { container-type: inline-size; width: 100%; }
+/* Mount-Div zwischen Host und Karte: gibt die Hoehe des Hosts weiter. */
+.root { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.wrap { container-type: inline-size; display: flex; flex: 1; flex-direction: column; width: 100%; }
 
-/* Karte: gleiche Masse wie .r19 (padding 32, radius 24, Schatten), immer gleich gross. */
-.card { display: flex; flex-direction: column; height: 812px; padding: 32px; overflow: hidden; background: #fff; border-radius: 24px; box-shadow: 0 24px 24px -12px rgba(0, 0, 0, .25); }
-@container (max-width: 440px) { .card { height: 780px; padding: 20px 16px; } }
+/* Karte: gleiche Masse wie .r19 (padding 32, radius 24, Schatten). Am Desktop streckt sie sich auf die Hoehe der Hero-Zeile (Ober-/Unterkante des Textblocks),
+   untereinander (Mobil) hat sie feste Mindesthoehe, damit nichts springt. */
+.card { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 32px; overflow: hidden; background: #fff; border-radius: 24px; box-shadow: 0 24px 24px -12px rgba(0, 0, 0, .25); }
+@media (max-width: 995px) { .card { min-height: 812px; } }
+@container (max-width: 440px) { .card { min-height: 780px; padding: 20px 16px; } }
 
 /* ---------- Kopf ---------- */
 .head { margin-bottom: 18px; }
@@ -37,11 +41,11 @@
 /* ---------- Ergebnis ---------- */
 .result { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: rise .45s ease both; }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.panel { flex: 1; min-height: 0; background: var(--neutral-bg); border-radius: 20px; padding: 18px 20px; box-shadow: inset 0 8px 18px hsl(0 0% 100% / .6); }
+.panel { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--neutral-bg); border-radius: 20px; padding: 14px 20px 12px; box-shadow: inset 0 8px 18px hsl(0 0% 100% / .6); }
 .eyebrow { font-size: 14px; font-weight: 600; letter-spacing: -.02em; color: var(--purple); }
 .eyebrow.dim { color: var(--muted); font-weight: 500; font-size: 13px; margin: 10px 0 2px; }
 .lead { margin: 2px 0; font-size: 15px; color: var(--paragraph); }
-.big { font-family: 'Instrument Serif', Georgia, serif; font-size: 62px; line-height: 1.05; letter-spacing: -.02em; color: var(--purple); margin: 0; font-variant-numeric: tabular-nums; }
+.big { font-family: 'Instrument Serif', Georgia, serif; font-size: 56px; line-height: 1.05; letter-spacing: -.02em; color: var(--purple); margin: 0; font-variant-numeric: tabular-nums; }
 .ab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin: 12px 0 0; }
 .ab div { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }
 .ab small { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
@@ -49,7 +53,9 @@
 .ab.tax { margin-top: 10px; }
 .ab .opt { border-color: hsl(241.7 93.5% 69.8% / .45); box-shadow: 0 0 0 3px hsl(241.7 93.5% 69.8% / .1); }
 .ab .opt strong { color: var(--purple); }
-.chart { width: 100%; height: auto; display: block; touch-action: none; }
+.chartwrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.chartbox { flex: 1; min-height: 100px; position: relative; }
+.chart { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .g0 { stop-color: var(--purple); stop-opacity: .28; } .g1 { stop-color: var(--purple); stop-opacity: 0; }
 .c-opt { stroke: var(--purple); } .c-cur { stroke: hsl(241.6 78.7% 9.2% / .4); }
 .c-axis, .c-guide { stroke: hsl(241.6 78.7% 9.2% / .15); } .c-txt { fill: var(--muted); }
@@ -57,7 +63,7 @@
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--paragraph); min-height: 20px; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 .k-opt { background: var(--purple); } .k-cur { background: hsl(241.6 78.7% 9.2% / .4); }
-.result .btn { margin-top: 12px; padding: 15px 24px; }
+.result .btn { margin-top: 10px; padding: 14px 24px; }
 .result .legal { font-size: 11.5px; margin: 10px 0 0; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

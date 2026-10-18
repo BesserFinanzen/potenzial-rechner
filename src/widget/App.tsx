@@ -137,7 +137,7 @@ export function App({ tracker, calendarId }: Props) {
             </div>
             <div class="foot">
               <button type="button" class="btn" onClick={show}>Ergebnis zeigen</button>
-              <p class="legal">Deine Angaben nutzen wir nur für diese Berechnung und dein Gespräch. [DATENSCHUTZ-HINWEIS PRÜFEN]</p>
+              <p class="legal">Deine Angaben nutzen wir nur für diese Berechnung und dein Gespräch.</p>
             </div>
           </>
         )}
