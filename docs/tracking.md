@@ -11,9 +11,10 @@ Zusätzlich feuert jedes Event ein `CustomEvent('bf:rechner:track')` auf `window
 | rechner_start | erste Eingabe des Nutzers | – |
 | rechner_step | Feld verlassen (Blur) | `field`, `value` |
 | rechner_result | Klick auf „Ergebnis zeigen“ mit gültigen Angaben | `inputs`, `result`, `calcVersion` |
-| rechner_edit | Angabe im Ergebnis-Zustand geändert und neu gültig berechnet (0,7 s entprellt) | `inputs`, `result`, `calcVersion` |
-| rechner_cta_click | CTA „Erstgespräch buchen“ | – |
+| rechner_reset | Klick auf „Neu berechnen“ (zurück zur Eingabe, Werte bleiben stehen) | – |
 | calendly_scheduled | Termin gebucht (Calendly-Message) | – |
+
+`result` enthält seit calcVersion 0.2.0: `endCurrent`, `endOptimized`, `potential`, `years`, `marginalRate`, `annualRefund`, `totalRefund` (additiv, `schemaVersion` bleibt 1).
 
 Gemeinsame Felder: `event`, `schemaVersion`, `sessionId`, `ts`, `page`, `lid`, `utm{source,medium,campaign,content,term}`, `data`.
 

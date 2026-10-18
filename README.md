@@ -12,11 +12,11 @@ npm run build    # dist/rechner.js
 ```
 
 ## Verhalten und Größe
-Zustand 1: nur die vier Eingaben (Alter, Netto, Sparrate, Bestand) plus Button „Ergebnis zeigen“. Zustand 2: Eingaben werden kompakt (bleiben editierbar, Ergebnis rechnet live neu), darunter Ergebnis, Chart und Termin-Button.
-Die Karte hat in beiden Zuständen dieselbe Größe: Breite wie `.r19` in Webflow (max. 520 px, Padding 32 px, Radius 24 px, gleicher Schatten), Höhe fest 812 px (Mobil, Container ≤ 440 px: 930 px).
+Zustand 1: nur die drei Eingaben (Alter, Netto, Sparrate) plus Button „Ergebnis zeigen“. Zustand 2: nur das Ergebnis mit Chart und dem Button „Neu berechnen“ (zurück zur Eingabe, Werte bleiben stehen).
+Die Karte hat in beiden Zuständen dieselbe Größe: Breite wie `.r19` in Webflow (max. 520 px, Padding 32 px, Radius 24 px, gleicher Schatten), Höhe fest 812 px (Mobil, Container ≤ 440 px: 780 px).
 
 ## Aufbau
-- `src/calc/` – Rechenengine und Annahmen (`config.ts`, aktuell **Platzhalter**, siehe `docs/rechenlogik.md`)
+- `src/calc/` – Rechenengine und Annahmen (`config.ts`, `tax.ts` für den Grenzsteuersatz, siehe `docs/rechenlogik.md`)
 - `src/widget/` – UI (Stepper, Ergebnis, Chart)
 - `src/tracking/` – Events an den n8n-Webhook (`docs/tracking.md`)
 - `src/integrations/webflow.ts` – Calendly-Anbindung der Seite

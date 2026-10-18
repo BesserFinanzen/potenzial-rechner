@@ -7,8 +7,7 @@ export type EventName =
   | 'rechner_start'
   | 'rechner_step'
   | 'rechner_result'
-  | 'rechner_edit'
-  | 'rechner_cta_click'
+  | 'rechner_reset'
   | 'calendly_scheduled';
 
 export interface TrackEvent {

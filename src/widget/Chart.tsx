@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { SeriesPoint, eur } from '../calc/engine';
 
-const W = 640, H = 170, PAD = { l: 8, r: 8, t: 12, b: 26 };
+const W = 640, H = 300, PAD = { l: 8, r: 8, t: 12, b: 26 };
 
 export function Chart({ series }: { series: SeriesPoint[] }) {
   const [hover, setHover] = useState<number | null>(null);
