@@ -34,7 +34,7 @@ Datenschutz: Hinweistext auf der Seite und AVV/Einwilligung vor Livegang prüfen
 ## Seiten-Events (optional, getrennt vom Rechner-Tracking)
 Zusätzliche Events zu Besuch, Scrolltiefe, Sichtbarkeit des Rechners und aktiver Verweildauer. Sie laufen über einen **eigenen Webhook und eine eigene Data Table** (`seiten_events`) mit eigener Schema-Version (`PAGE_SCHEMA_VERSION` in `src/tracking/page-schema.ts`). Die Rechner-Events oben, ihr Schema, der Workflow und `rechner_events` sind davon nicht betroffen.
 
-**Schalter:** Das Tracking läuft nur, wenn das Embed `data-page-endpoint` trägt. Ohne Attribut passiert nichts; Attribut entfernen = aus. Der Wert `console` loggt nur in die Konsole (Dev).
+**Schalter:** Seit 2026-10-20 ist es auf /erstgespraech aktiv (Attribut am Embed gesetzt und veröffentlicht, alle vier Events live in `seiten_events` bestätigt). Es läuft nur, wenn das Embed `data-page-endpoint` trägt. Ohne Attribut passiert nichts; Attribut entfernen = aus. Der Wert `console` loggt nur in die Konsole (Dev).
 ```html
 <div data-bf-rechner data-endpoint="…/potenzial-rechner" data-page-endpoint="https://bfmg.app.n8n.cloud/webhook/seiten-tracking" data-calendar="calendly-rechner-embed"></div>
 ```

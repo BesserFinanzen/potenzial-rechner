@@ -10,4 +10,4 @@ Stand 2026-10-20: Das Embed ist auf https://www.besserfinanzen.de/erstgespraech 
 ```
 3. Der bestehende Calendly-Embed (`#calendly-rechner-embed`, `window.startCalendlyIn`) bleibt unverändert; das Widget ruft ihn nach dem Ergebnis auf.
 4. `RECHNER_LIVE` im Page-Head auf `true` setzen, `noindex` erst nach Freigabe entfernen.
-5. Optional: Seiten-Tracking einschalten, indem am Embed `data-page-endpoint="https://bfmg.app.n8n.cloud/webhook/seiten-tracking"` ergänzt wird (siehe `docs/tracking.md`, „Seiten-Events“). Ohne das Attribut bleibt alles wie bisher; Attribut entfernen schaltet es wieder ab.
+5. Seiten-Tracking (seit 2026-10-20 auf /erstgespraech aktiv; Webflow-Element-ID des Embeds `0e302df9-5dd5-7e28-79b6-ca1e376e951f`): einschalten, indem am Embed `data-page-endpoint="https://bfmg.app.n8n.cloud/webhook/seiten-tracking"` ergänzt wird (siehe `docs/tracking.md`, „Seiten-Events“). Ohne das Attribut bleibt alles wie bisher; Attribut entfernen schaltet es wieder ab.
