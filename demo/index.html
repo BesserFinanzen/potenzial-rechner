@@ -31,6 +31,9 @@
   <script>
     window.startCalendlyIn = function (id) { document.getElementById(id).textContent = 'Calendly gestartet (' + id + ')'; };
     addEventListener('bf:rechner:track', function (e) { (window.__events = window.__events || []).push(e.detail); });
+    // Seiten-Tracking nur mit ?pagetrack (loggt in die Konsole), sonst bleibt die Demo wie das Standard-Embed.
+    addEventListener('bf:page:track', function (e) { (window.__pageEvents = window.__pageEvents || []).push(e.detail); });
+    if (/[?&]pagetrack/.test(location.search)) document.querySelector('[data-bf-rechner]').dataset.pageEndpoint = 'console';
   </script>
   <script type="module" src="/src/main.ts"></script>
 </body>

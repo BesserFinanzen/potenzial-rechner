@@ -19,5 +19,37 @@ Zusätzlich feuert jedes Event ein `CustomEvent('bf:rechner:track')` auf `window
 Gemeinsame Felder: `event`, `schemaVersion`, `sessionId`, `ts`, `page`, `lid`, `utm{source,medium,campaign,content,term}`, `data`.
 
 ## n8n
-Webhook (POST) → prüfen `schemaVersion` → speichern (Data Table) → optional über `lid` zuordnen und an ActiveCampaign/CRM geben.
+Workflow „Potenzial-Rechner | Tracking“ (Projekt BesserFinanzen, https://bfmg.app.n8n.cloud/workflow/qDQ3suKOCCiKU0rc):
+Webhook (POST) → Code-Node parst den `text/plain`-Body und prüft `schemaVersion`, `event`, `sessionId`, `ts` → Upsert in die Data Table `rechner_events`.
+
+- **Endpoint für `data-endpoint`:** `https://bfmg.app.n8n.cloud/webhook/potenzial-rechner` (Production-URL, nur aktiv, wenn der Workflow veröffentlicht ist; `/webhook-test/…` lauscht nur im Editor).
+- **CORS:** Der Webhook erlaubt alle Origins (`allowedOrigins: *`) und antwortet sofort mit 200 ohne Body. Ohne das würde der Browser die Antwort verwerfen und der Client dasselbe Event erneut senden.
+- **Deduplizierung:** Upsert über `session_id` + `event` + `ts`. Doppelt gesendete Events (Retry, Beacon beim Verlassen der Seite) ergeben eine Zeile.
+- **Spalten:** Gemeinsame Felder, `utm_*`, bei `rechner_step` `field`/`value`, bei `rechner_result` `age`, `net_income`, `monthly_savings`, `potential`, `marginal_rate`, `annual_refund`, `total_refund`, `calc_version`. `raw` enthält das komplette Event.
+- **Ungültige Nutzlast:** Landet als Zeile mit `event = invalid` in `raw` (eine Zeile, wird überschrieben), nützlich zum Debuggen.
+- **Noch offen:** Switch auf `event` und bei `rechner_result` / `calendly_scheduled` per `lid` an ActiveCampaign/CRM geben.
+
 Datenschutz: Hinweistext auf der Seite und AVV/Einwilligung vor Livegang prüfen.
+
+## Seiten-Events (optional, getrennt vom Rechner-Tracking)
+Zusätzliche Events zu Besuch, Scrolltiefe, Sichtbarkeit des Rechners und aktiver Verweildauer. Sie laufen über einen **eigenen Webhook und eine eigene Data Table** (`seiten_events`) mit eigener Schema-Version (`PAGE_SCHEMA_VERSION` in `src/tracking/page-schema.ts`). Die Rechner-Events oben, ihr Schema, der Workflow und `rechner_events` sind davon nicht betroffen.
+
+**Schalter:** Das Tracking läuft nur, wenn das Embed `data-page-endpoint` trägt. Ohne Attribut passiert nichts; Attribut entfernen = aus. Der Wert `console` loggt nur in die Konsole (Dev).
+```html
+<div data-bf-rechner data-endpoint="…/potenzial-rechner" data-page-endpoint="https://bfmg.app.n8n.cloud/webhook/seiten-tracking" data-calendar="calendly-rechner-embed"></div>
+```
+
+| event | Zeitpunkt | data |
+|---|---|---|
+| page_view | Seite geladen | `referrer` (Origin+Pfad), `viewport {w,h}` |
+| scroll_depth | Unterer Rand des Viewports erreicht 25/50/75/100 % der Seitenhöhe, je Schwelle einmal pro Seitenaufruf | `depth` |
+| rechner_visible | Mindestens die Hälfte des Widgets (oder die Hälfte des Viewports) sichtbar, einmal pro Seitenaufruf | – |
+| engaged_time | Aktive Sekunden (Tab sichtbar, Eingabe/Scrollen in den letzten 10 s), alle 15 s bis 300 s, beim Verlassen ein letztes mit `final: true` | `seconds` (kumuliert), `final` |
+
+Gemeinsame Felder wie bei den Rechner-Events (`event`, `schemaVersion`, `sessionId`, `ts`, `page`, `lid`, `utm{…}`, `data`). Kurze Seiten, die ganz in den Viewport passen, melden alle vier Schwellen sofort.
+
+**Verbindung zum Rechner:** Beide Tracker nutzen dieselbe `sessionId` (`sessionStorage`-Key `bf-rechner-session`). `seiten_events` und `rechner_events` lassen sich per `session_id` joinen, z. B. für den Trichter Seitenaufruf → Rechner gesehen → `rechner_start` → `rechner_result` → `calendly_scheduled`.
+
+**n8n:** Eigener Workflow „Seiten-Tracking“ nach demselben Muster wie oben (Webhook POST, `allowedOrigins: *`, sofort 200 → Code-Node prüft `schemaVersion`/`event`/`sessionId`/`ts` → Upsert über `session_id` + `event` + `ts` in `seiten_events`).
+
+Datenschutz: Die Session-ID liegt im `sessionStorage`; das Seiten-Tracking läuft ohne Consent-Abfrage. Datenschutzerklärung und Einwilligungsfrage (§ 25 TDDDG) vor dem Setzen von `data-page-endpoint` klären.
