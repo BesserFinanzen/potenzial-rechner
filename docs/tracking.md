@@ -50,6 +50,6 @@ Gemeinsame Felder wie bei den Rechner-Events (`event`, `schemaVersion`, `session
 
 **Verbindung zum Rechner:** Beide Tracker nutzen dieselbe `sessionId` (`sessionStorage`-Key `bf-rechner-session`). `seiten_events` und `rechner_events` lassen sich per `session_id` joinen, z. B. für den Trichter Seitenaufruf → Rechner gesehen → `rechner_start` → `rechner_result` → `calendly_scheduled`.
 
-**n8n:** Eigener Workflow „Seiten-Tracking“ nach demselben Muster wie oben (Webhook POST, `allowedOrigins: *`, sofort 200 → Code-Node prüft `schemaVersion`/`event`/`sessionId`/`ts` → Upsert über `session_id` + `event` + `ts` in `seiten_events`).
+**n8n:** Eigener Workflow „Seiten-Tracking“ (https://bfmg.app.n8n.cloud/workflow/LuDOoGzxMSgVxNAC, Projekt BesserFinanzen), veröffentlicht. Webhook POST `https://bfmg.app.n8n.cloud/webhook/seiten-tracking` (`allowedOrigins: *`, sofort 200 ohne Body) → Code-Node prüft `schemaVersion`/`event`/`sessionId`/`ts` → Upsert über `session_id` + `event` + `ts` in die Data Table `seiten_events`. Ungültige Nutzlast landet als Zeile `event = invalid` in `raw`. Spalten: gemeinsame Felder, `utm_*`, `depth`, `seconds`, `final`, `referrer`, `viewport_w/h`, `raw`.
 
 Datenschutz: Die Session-ID liegt im `sessionStorage`; das Seiten-Tracking läuft ohne Consent-Abfrage. Datenschutzerklärung und Einwilligungsfrage (§ 25 TDDDG) vor dem Setzen von `data-page-endpoint` klären.
