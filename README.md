@@ -19,6 +19,7 @@ Die Karte hat in beiden Zuständen dieselbe Größe: Breite wie `.r19` in Webflo
 - `src/calc/` – Rechenengine und Annahmen (`config.ts`, `tax.ts` für den Grenzsteuersatz, siehe `docs/rechenlogik.md`)
 - `src/widget/` – UI (Stepper, Ergebnis, Chart)
 - `src/tracking/` – Events an den n8n-Webhook (`docs/tracking.md`)
+- `docs/reakt-okt26.md` – Reakt-Kampagne: Nachschub Close → ActiveCampaign, Mail-Links, Opt-Out
 - `src/integrations/webflow.ts` – Calendly-Anbindung der Seite
 - `demo/` – lokale Testseite
 

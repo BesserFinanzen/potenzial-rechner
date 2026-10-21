@@ -20,14 +20,14 @@ Gemeinsame Felder: `event`, `schemaVersion`, `sessionId`, `ts`, `page`, `lid`, `
 
 ## n8n
 Workflow „Potenzial-Rechner | Tracking“ (Projekt BesserFinanzen, https://bfmg.app.n8n.cloud/workflow/qDQ3suKOCCiKU0rc):
-Webhook (POST) → Code-Node parst den `text/plain`-Body und prüft `schemaVersion`, `event`, `sessionId`, `ts` → Upsert in die Data Table `rechner_events`.
+Webhook (POST) → Code-Node parst den `text/plain`-Body und prüft `schemaVersion`, `event`, `sessionId`, `ts` → Wait (3 s) → Insert in die Data Table `rechner_events`.
 
 - **Endpoint für `data-endpoint`:** `https://bfmg.app.n8n.cloud/webhook/potenzial-rechner` (Production-URL, nur aktiv, wenn der Workflow veröffentlicht ist; `/webhook-test/…` lauscht nur im Editor).
 - **CORS:** Der Webhook erlaubt alle Origins (`allowedOrigins: *`) und antwortet sofort mit 200 ohne Body. Ohne das würde der Browser die Antwort verwerfen und der Client dasselbe Event erneut senden.
-- **Deduplizierung:** Upsert über `session_id` + `event` + `ts`. Doppelt gesendete Events (Retry, Beacon beim Verlassen der Seite) ergeben eine Zeile.
-- **Spalten:** Gemeinsame Felder, `utm_*`, bei `rechner_step` `field`/`value`, bei `rechner_result` `age`, `net_income`, `monthly_savings`, `potential`, `marginal_rate`, `annual_refund`, `total_refund`, `calc_version`. `raw` enthält das komplette Event.
-- **Ungültige Nutzlast:** Landet als Zeile mit `event = invalid` in `raw` (eine Zeile, wird überschrieben), nützlich zum Debuggen.
-- **Noch offen:** Switch auf `event` und bei `rechner_result` / `calendly_scheduled` per `lid` an ActiveCampaign/CRM geben.
+- **Dubletten:** Jedes empfangene Event wird als neue Zeile eingefügt (kein Upsert). Doppelt gesendete Events (Retry, Beacon beim Verlassen der Seite) können mehrfach in `rechner_events` stehen. Die Funnel-Aggregation ignoriert sie über `session_id` + `event` + `ts`.
+- **Spalten:** Gemeinsame Felder, `utm_source`/`utm_medium`/`utm_campaign`/`utm_content` (kein `utm_term`), bei `rechner_result` `age`, `net_income`, `monthly_savings`, `potential`, `marginal_rate`, `annual_refund`, `total_refund`, `calc_version`. `raw` enthält das komplette Event; `field`/`value` von `rechner_step` stehen nur dort.
+- **Ungültige Nutzlast:** Landet als eigene Zeile mit `event = invalid`, Nutzlast in `raw`, nützlich zum Debuggen.
+- **Weiterverarbeitung:** Die Funnel-Aggregation (unten) führt die Events pro Session zusammen und schreibt sie für die Reakt-Kampagne per `lid` als Aktivität nach Close. Der Weg der Leads von Close nach ActiveCampaign und der Opt-Out stehen in `docs/reakt-okt26.md`.
 
 Datenschutz: Hinweistext auf der Seite und AVV/Einwilligung vor Livegang prüfen.
 
@@ -57,13 +57,19 @@ Datenschutz: Die Session-ID liegt im `sessionStorage`; das Seiten-Tracking läuf
 ## Zusammengeführte Auswertung (`funnel_sessions`)
 Workflow „Funnel-Aggregation“ (https://bfmg.app.n8n.cloud/workflow/6Ql0NWmA6t44JsDX, Projekt BesserFinanzen) läuft alle 30 Minuten. Er liest `seiten_events` und `rechner_events` komplett, ignoriert Dubletten (`session_id` + `event` + `ts`) und schreibt per Upsert eine Zeile je `session_id` in die Data Table `funnel_sessions`. Die beiden Quell-Workflows und -Tabellen werden nur gelesen.
 
-Spalten: `session_id`, `first_seen`, `last_seen`, `page`, `lid`, `utm_*`, `referrer`, `device` (mobile < 768 px, tablet < 1024 px, sonst desktop), `viewport_w/h`, `max_scroll_depth`, `engaged_seconds`, `rechner_visible`, `rechner_started`, `rechner_result`, `calendly_booked`, `stage` (`besuch` → `rechner_gesehen` → `gestartet` → `ergebnis` → `termin`), Rechner-Eingaben und -Ergebnis des letzten `rechner_result`, `seconds_to_result` (Sekunden vom ersten Event bis zum ersten Ergebnis), `last_field` (zuletzt ausgefülltes Feld, zeigt die Abbruchstelle), `is_test` (UTM-Quelle `test`/`claude-test`, UTM-Medium `test` oder `session_id` mit `test-`), `events_total`, `updated_at`.
+Spalten: `session_id`, `first_seen`, `last_seen`, `page`, `lid`, `utm_*`, `referrer`, `device` (mobile < 768 px, tablet < 1024 px, sonst desktop), `viewport_w/h`, `max_scroll_depth`, `engaged_seconds`, `rechner_visible`, `rechner_started`, `rechner_result`, `calendly_booked`, `stage` (`besuch` → `rechner_gesehen` → `gestartet` → `ergebnis` → `termin`), Rechner-Eingaben und -Ergebnis des letzten `rechner_result`, `seconds_to_result` (Sekunden vom ersten Event bis zum ersten Ergebnis), `last_field` (zuletzt ausgefülltes Feld, zeigt die Abbruchstelle), `is_test` (UTM-Quelle `test`/`claude-test`, UTM-Medium `test` oder `session_id` mit `test-`), `events_total`, `updated_at`, `synced_events` (Stand von `events_total` beim letzten erfolgreichen Close-Write, siehe unten; wird vom Upsert nicht überschrieben).
 
 Grenzen: Der Workflow liest bei jedem Lauf alle Zeilen. Bei sehr viel Traffic auf inkrementelles Lesen umstellen. Sessions ohne Seiten-Events (vor Aktivierung am 2026-10-20) haben leere Scroll-/Zeitfelder.
 
 ### Close-Aktivität „A. E-Mail Kampagne: Reakt 10.26“
-Der Workflow „Funnel-Aggregation“ schreibt aus `funnel_sessions` zusätzlich eine Custom Activity pro Lead in Close (Close-Node, Typ `actitype_3a6W6x5iHcEghCEpg9fzlU`). Ablauf: Code-Node „Close-Aktivität vorbereiten“ fasst alle Sessions eines Leads zusammen → „Aktivität suchen“ → „Aktivität vorhanden?“ → „Aktivität aktualisieren“ oder „Aktivität anlegen“. Es entsteht höchstens eine Aktivität je Lead.
+Der Workflow „Funnel-Aggregation“ schreibt aus `funnel_sessions` zusätzlich eine Custom Activity pro Lead in Close (Close-Node, Typ `actitype_3a6W6x5iHcEghCEpg9fzlU`). Ablauf: „If“ (Session engagiert) → Code-Node „Close-Aktivität vorbereiten“ fasst die Sessions eines Leads zusammen → „Aktivität suchen“ → „Aktivität zuordnen“ → „Aktivität vorhanden?“ → „Aktivität aktualisieren“ oder „Aktivität anlegen“ → „Als synchronisiert markieren“ → „Sync-Stand speichern“ (`synced_events` in `funnel_sessions`). Es entsteht höchstens eine Aktivität je Lead.
 
-Bedingungen: Session hat `lid` und `utm_campaign = reakt_okt26`, ist kein Test (`is_test`), mindestens eine Session war in den letzten 6 Stunden aktiv, und der Lead war engagiert (Ergebnis berechnet, Scrolltiefe ≥ 75 % oder ≥ 60 s aktiv; gleiche Schwellen wie der `If`-Node). Kampagne und Zeitfenster stehen oben im Code-Node.
+Bedingungen:
+- Die Session ist engagiert („If“: Ergebnis berechnet, Scrolltiefe ≥ 75 % oder ≥ 60 s aktiv). Sessions darunter fließen nicht in die Aktivität ein, auch nicht in die Summe der aktiven Sekunden.
+- Die Session hat `lid` und `utm_campaign = reakt_okt26` und ist kein Test (`is_test`). Die Kampagne steht oben im Code-Node.
+- Mindestens eine Session des Leads hat neue Events seit dem letzten Close-Write (`synced_events` leer oder kleiner als `events_total`). Ohne neue Events wird nichts geschrieben.
+- Der Lead ist insgesamt engagiert (gleiche Schwellen, Scrolltiefe als Maximum, Sekunden als Summe).
+
+Schlägt der Close-Write fehl (z. B. ungültige `lid`), landet der Lead im NoOp „Close-Fehler“, wird nicht als synchronisiert markiert und bei jedem Lauf erneut versucht. Eine Benachrichtigung gibt es nicht.
 
 Feldzuordnung: Erster Besuch Landingpage (frühester `first_seen`), Gerät (zuletzt genutzt), Scrolltiefe max. (%), Aktive Sekunden auf Website (Summe), Rechner gesehen / gestartet / Ergebnis berechnet (Ja/Nein), Potenzial, Steuervorteil jährlich und gesamt, Eingegebenes Alter, monatliches Einkommen (Netto), aktuelle Sparrate (jeweils letztes Ergebnis), Stufe (Besuch, Rechner gesehen, Rechner Gestartet, Ergebnis gesehen; für „Termin“ gibt es keine Option). Nicht in Close: „Sekunden bis Ergebnis“ und „Letztes ausgefülltes Feld“ (Felder existieren dort nicht mehr).
